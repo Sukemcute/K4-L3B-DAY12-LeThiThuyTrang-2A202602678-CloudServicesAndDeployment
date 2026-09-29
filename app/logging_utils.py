@@ -8,6 +8,7 @@ lọc/đếm/cảnh báo được. Đây là khác biệt lớn giữa localhost
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 
@@ -18,28 +19,45 @@ def utc_now_iso() -> str:
 
 
 def log_event(event: str, level: str = "info", **fields) -> str:
-    """Ghi một dòng log JSON ra stdout.
+    """Ghi một dòng log JSON chi tiết ra stdout.
 
-    TODO (CP1): tạo dict gồm tối thiểu 3 khóa
-        - "event"     : tên sự kiện, lấy từ tham số ``event``
-        - "level"     : mức log, VIẾT THƯỜNG (dùng ``level.lower()``)
-        - "timestamp" : ``utc_now_iso()``
-    rồi gộp thêm mọi cặp key/value trong ``**fields``.
-
-    In chuỗi JSON đó ra stdout **trên một dòng duy nhất**
-    (``json.dumps(..., ensure_ascii=False)``, đừng dùng ``indent``) và
-    trả về chính chuỗi đó.
-
-    Ví dụ:
-        >>> log_event("ask_completed", user_id="sv01", cost_usd=0.0001)
-        '{"event": "ask_completed", "level": "info", "timestamp": "...", ...}'
+    Bao gồm các trường chuẩn hóa:
+        - "event"     : tên sự kiện
+        - "level"     : mức log (viết thường: info, warn, error...)
+        - "timestamp" : thời điểm ISO-8601 UTC
+        - "service"   : tên dịch vụ (mặc định day12-agent nếu chưa có)
+        - "pid"       : process ID phục vụ quan sát đa tiến trình/container
+        - "message"   : tóm tắt nội dung dễ đọc cho con người
+        - **fields    : các trường metadata chi tiết (user_id, cost_usd, tokens...)
     """
+    clean_level = level.lower()
+    
+    # Sinh message tóm tắt trực quan nếu chưa được truyền vào
+    message = fields.pop("message", None)
+    if not message:
+        if event == "ask_completed":
+            uid = fields.get("user_id", "anonymous")
+            cost = fields.get("cost_usd", 0.0)
+            message = f"AI agent responded for user='{uid}' (cost=${cost:.6f})"
+        elif event == "service_started":
+            message = f"Service started successfully (version={fields.get('version', 'unknown')})"
+        elif event == "service_stopped":
+            message = "Service stopped gracefully"
+        else:
+            message = f"Event '{event}' recorded"
+
+    service_name = fields.pop("service", "day12-agent")
+
     payload = {
-        "event": event,
-        "level": level.lower(),
         "timestamp": utc_now_iso(),
+        "level": clean_level,
+        "service": service_name,
+        "pid": os.getpid(),
+        "event": event,
+        "message": message,
         **fields,
     }
-    line = json.dumps(payload, ensure_ascii=False)
+
+    line = json.dumps(payload, ensure_ascii=False, default=str)
     print(line)
     return line

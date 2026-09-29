@@ -77,12 +77,12 @@
 
 ---
 
-## Phase 2: Docker Production-Ready (CP2 — 15 điểm | Start +105 phút)
+## Phase 2: Docker Production-Ready (CP2 — 15/15 điểm | ĐÃ HOÀN THÀNH ✅)
 
-- [ ] **2.1. Cập nhật [.dockerignore](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/.dockerignore)**:
+- [x] **2.1. Cập nhật [.dockerignore](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/.dockerignore)**:
   - Bổ sung: `.env`, `.env.*`, `.git`, `.gitignore`, `__pycache__`, `.venv`, `*.pyc`, `*.pyo`, `.pytest_cache`, `.agent`
   - Đảm bảo không ignore `app/`, `utils/`, `requirements.txt`
-- [ ] **2.2. Viết lại [Dockerfile](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/Dockerfile) chuẩn Production**:
+- [x] **2.2. Viết lại [Dockerfile](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/Dockerfile) chuẩn Production**:
   - Stage 1 (`builder`): Base `python:3.11-slim`, `COPY requirements.txt .`, `RUN pip install --no-cache-dir --prefix=/install -r requirements.txt`
   - Stage 2 (`runtime`): Base `python:3.11-slim`, `COPY --from=builder /install /usr/local`
   - Copy mã nguồn sau: `COPY app ./app`, `COPY utils ./utils`
@@ -96,22 +96,17 @@
     ```dockerfile
     CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
     ```
-- [ ] **2.3. Bổ sung service `agent` vào [docker-compose.yml](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/docker-compose.yml)**:
+- [x] **2.3. Bổ sung service `agent` vào [docker-compose.yml](file:///d:/Sukem/VinUni/Lab/K4-L3B-DAY12-LeThiThuyTrang-2A202602678-CloudServicesAndDeployment/docker-compose.yml)**:
   - `build: .`
   - `ports: ["8000:8000"]`
   - `depends_on: redis`
   - `environment`: `AGENT_API_KEY: ${AGENT_API_KEY}`, `REDIS_URL: redis://redis:6379/0`
   - Thêm healthcheck gọi `/health`
-- [ ] **Kiểm thử Checkpoint 2**:
-  ```powershell
-  # Kiểm tra nhanh cấu trúc
-  .\.venv\Scripts\python.exe -m pytest tests/test_cp2.py -v -m "not docker"
-  # Build image và kiểm tra dung lượng (< 500MB)
-  docker build -t day12-agent:prod .
-  docker images day12-agent:prod
-  # Chạy toàn bộ test CP2
-  .\.venv\Scripts\python.exe -m pytest tests/test_cp2.py -v
-  ```
+- [x] **Kiểm thử Checkpoint 2**:
+  - `.\.venv\Scripts\python.exe -m pytest tests/test_cp2.py -v` (16/16 test PASS)
+  - `docker images day12-agent:prod`: kích thước **184MB** (đạt tiêu chuẩn < 500MB)
+  - `docker compose ps`: Cả 2 service `agent` và `redis` đều healthy
+  - `curl http://localhost:8000/health`: 200 OK
 - [ ] **Commit CP2**:
   ```powershell
   git add Dockerfile docker-compose.yml .dockerignore
